@@ -64,15 +64,25 @@ export const useSessionStore = defineStore('session', () => {
     return session.id;
   };
 
-  const deleteSession = (sessionId: string) => {
-    if (!sessions.value.some((item) => item.id === sessionId)) {
+  const deleteSessions = (sessionIds: string[]) => {
+    const uniqueIds = Array.from(new Set(sessionIds));
+    if (uniqueIds.length === 0) {
       return;
     }
 
-    sessions.value = sessions.value.filter((item) => item.id !== sessionId);
-    useChatStore().removeMessagesForSession(sessionId);
+    const targetIds = new Set(uniqueIds);
+    const nextSessions = sessions.value.filter((item) => !targetIds.has(item.id));
+    if (nextSessions.length === sessions.value.length) {
+      return;
+    }
 
-    if (activeSessionId.value === sessionId) {
+    sessions.value = nextSessions;
+    const chatStore = useChatStore();
+    uniqueIds.forEach((id) => {
+      chatStore.removeMessagesForSession(id);
+    });
+
+    if (!activeSessionId.value || targetIds.has(activeSessionId.value)) {
       activeSessionId.value = sessions.value[0]?.id ?? null;
       if (!activeSessionId.value && sessions.value.length === 0) {
         createSession();
@@ -81,6 +91,10 @@ export const useSessionStore = defineStore('session', () => {
     }
 
     persist();
+  };
+
+  const deleteSession = (sessionId: string) => {
+    deleteSessions([sessionId]);
   };
 
   const switchSession = (sessionId: string) => {
@@ -108,6 +122,7 @@ export const useSessionStore = defineStore('session', () => {
     activeSession,
     createSession,
     deleteSession,
+    deleteSessions,
     switchSession,
     touchSession,
     loadFromStorage,
