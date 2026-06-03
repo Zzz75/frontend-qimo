@@ -65,17 +65,21 @@ onUnmounted(() => {
 
 <style scoped>
 .chat-view {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .chat-layout {
   flex: 1;
   display: grid;
   grid-template-columns: 280px 1fr;
+  grid-template-rows: minmax(0, 1fr);
   position: relative;
   min-height: 0;
+  overflow: hidden;
 }
 
 .chat-main {
@@ -83,6 +87,7 @@ onUnmounted(() => {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar-overlay {

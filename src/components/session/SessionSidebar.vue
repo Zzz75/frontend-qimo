@@ -217,6 +217,7 @@ watch(
   flex-direction: column;
   gap: 12px;
   background: var(--color-panel);
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 }
@@ -233,7 +234,9 @@ watch(
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 
 .session-list {
