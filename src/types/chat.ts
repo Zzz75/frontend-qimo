@@ -1,0 +1,14 @@
+export type ChatRole = 'system' | 'user' | 'assistant';
+
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  createdAt: number;
+}
+
+export interface RoleOption {
+  id: string;
+  label: string;
+  description?: string;
+}
