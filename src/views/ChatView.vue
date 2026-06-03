@@ -30,9 +30,6 @@ const handleKeydown = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  if (sessionStore.sessions.length === 0) {
-    sessionStore.createSession();
-  }
   window.addEventListener('keydown', handleKeydown);
 });
 

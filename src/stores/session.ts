@@ -84,10 +84,6 @@ export const useSessionStore = defineStore('session', () => {
 
     if (!activeSessionId.value || targetIds.has(activeSessionId.value)) {
       activeSessionId.value = sessions.value[0]?.id ?? null;
-      if (!activeSessionId.value && sessions.value.length === 0) {
-        createSession();
-        return;
-      }
     }
 
     persist();
