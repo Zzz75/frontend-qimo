@@ -1,4 +1,4 @@
-import { nextTick, ref, type Ref } from 'vue';
+import { nextTick, type Ref } from 'vue';
 
 export const useAutoScroll = (containerRef: Ref<HTMLElement | null>) => {
   const scrollToBottom = async (behavior: ScrollBehavior = 'smooth') => {

@@ -12,6 +12,7 @@ dist-ssr/
 # Environment variables (keep .env.example tracked)
 .env
 .env.*
+.env.local
 !.env.example
 
 # Logs

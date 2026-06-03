@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { ChatRole } from '@/types/chat';
 import MarkdownRenderer from './MarkdownRenderer.vue';
 
 interface MessageItemProps {
-  role: string;
+  role: ChatRole;
   content: string;
 }
 

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { marked } from 'marked';
+import { useMarkdown } from '@/composables/useMarkdown';
 
 interface MarkdownRendererProps {
   content: string;
 }
 
 const props = defineProps<MarkdownRendererProps>();
+const { renderMarkdown } = useMarkdown();
 
-const htmlContent = computed(() => marked.parse(props.content));
+const htmlContent = computed(() => renderMarkdown(props.content));
 </script>
 
 <template>

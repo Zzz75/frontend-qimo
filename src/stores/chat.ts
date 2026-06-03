@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 
 import { createChatStream } from '@/api/chat';
 import type { ChatRequestMessage } from '@/api/types';
+import { useStreamResponse } from '@/composables/useStreamResponse';
 import { useAppStore } from '@/stores/app';
 import { useSessionStore } from '@/stores/session';
 import type { ChatMessage } from '@/types/chat';
@@ -17,6 +18,7 @@ export const useChatStore = defineStore('chat', () => {
   const error = ref<string | null>(null);
   const pendingAssistantMessageId = ref<string | null>(null);
   const lastFailedUserContent = ref<string | null>(null);
+  const streamResponse = useStreamResponse();
 
   const activeMessages = computed<ChatMessage[]>(() => {
     const sessionStore = useSessionStore();
@@ -90,7 +92,7 @@ export const useChatStore = defineStore('chat', () => {
     getSessionMessages(sessionId).push(assistantMessage);
     pendingAssistantMessageId.value = assistantMessage.id;
     isStreaming.value = true;
-    streamBuffer.value = '';
+    streamBuffer.value = streamResponse.resetStream();
     return assistantMessage.id;
   };
 
@@ -111,8 +113,9 @@ export const useChatStore = defineStore('chat', () => {
       return;
     }
 
-    message.content += chunk;
-    streamBuffer.value = message.content;
+    const nextBuffer = streamResponse.appendChunk(chunk);
+    message.content = nextBuffer;
+    streamBuffer.value = nextBuffer;
   };
 
   const finalizeAssistantMessage = () => {
@@ -128,6 +131,7 @@ export const useChatStore = defineStore('chat', () => {
     }
 
     isStreaming.value = false;
+    streamResponse.finalizeStream();
     streamBuffer.value = '';
     pendingAssistantMessageId.value = null;
     lastFailedUserContent.value = null;
@@ -157,6 +161,7 @@ export const useChatStore = defineStore('chat', () => {
   const rollbackSendingState = () => {
     removeIncompleteAssistantMessage();
     isStreaming.value = false;
+    streamResponse.resetStream();
     streamBuffer.value = '';
     pendingAssistantMessageId.value = null;
     persistMessages();
@@ -181,6 +186,7 @@ export const useChatStore = defineStore('chat', () => {
 
     const requestMessages = toRequestMessages(getSessionMessages(sessionId));
     let streamFinished = false;
+    let streamSucceeded = false;
 
     try {
       await createChatStream(
@@ -193,10 +199,12 @@ export const useChatStore = defineStore('chat', () => {
           onChunk: appendAssistantMessageChunk,
           onDone: () => {
             streamFinished = true;
+            streamSucceeded = true;
             finalizeAssistantMessage();
           },
           onError: (message) => {
             streamFinished = true;
+            streamSucceeded = false;
             handleStreamError(message);
           }
         }
@@ -209,7 +217,7 @@ export const useChatStore = defineStore('chat', () => {
     }
 
     if (streamFinished) {
-      return true;
+      return streamSucceeded;
     }
 
     const assistantMessage = getSessionMessages(sessionId).find(

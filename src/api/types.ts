@@ -23,4 +23,6 @@ export interface StreamChunk {
 export interface ApiError {
   code: string;
   message: string;
+  status?: number;
+  details?: unknown;
 }

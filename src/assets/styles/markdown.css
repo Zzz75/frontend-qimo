@@ -1,10 +1,57 @@
 .markdown-body {
   line-height: 1.65;
   word-break: break-word;
+  color: var(--color-text);
 }
 
 .markdown-body pre {
   overflow: auto;
   padding: 12px;
   border-radius: 8px;
+  background: #0f172a;
+}
+
+.markdown-body :is(h1, h2, h3, h4, h5, h6) {
+  margin: 1em 0 0.5em;
+  line-height: 1.35;
+}
+
+.markdown-body p {
+  margin: 0.65em 0;
+}
+
+.markdown-body :is(ul, ol) {
+  padding-left: 1.4em;
+  margin: 0.65em 0;
+}
+
+.markdown-body blockquote {
+  margin: 0.75em 0;
+  padding: 0.5em 0.9em;
+  border-left: 3px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75em 0;
+  font-size: 14px;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--color-border);
+  padding: 6px 8px;
+}
+
+.markdown-body a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
 }
