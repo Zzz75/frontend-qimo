@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 import type { RoleOption } from '@/types/chat';
+import { loadAppPreferences, saveAppPreferences } from '@/utils/storage';
 
 const DEFAULT_ROLE_OPTIONS: RoleOption[] = [
   {
@@ -39,11 +40,19 @@ export const useAppStore = defineStore('app', () => {
   const apiKey = ref('');
   const modelName = ref('deepseek-chat');
 
+  const persistPreferences = () => {
+    saveAppPreferences({
+      currentRole: currentRole.value,
+      modelName: modelName.value
+    });
+  };
+
   const setRole = (roleId: string) => {
     const normalizedRoleId = roleId.trim();
     const hasRole = availableRoles.value.some((item) => item.id === normalizedRoleId);
     if (hasRole) {
       currentRole.value = normalizedRoleId;
+      persistPreferences();
     }
   };
 
@@ -51,6 +60,7 @@ export const useAppStore = defineStore('app', () => {
     const normalizedModel = model.trim();
     if (normalizedModel) {
       modelName.value = normalizedModel;
+      persistPreferences();
     }
   };
 
@@ -67,10 +77,44 @@ export const useAppStore = defineStore('app', () => {
     const envDefaultRole = import.meta.env.VITE_DEFAULT_ROLE?.trim() ?? 'default';
     if (availableRoles.value.some((item) => item.id === envDefaultRole)) {
       currentRole.value = envDefaultRole;
+    } else {
+      currentRole.value = availableRoles.value[0]?.id ?? 'default';
+    }
+
+    const persisted = loadAppPreferences();
+    if (!persisted) {
+      persistPreferences();
       return;
     }
 
-    currentRole.value = availableRoles.value[0]?.id ?? 'default';
+    if (availableRoles.value.some((item) => item.id === persisted.currentRole)) {
+      currentRole.value = persisted.currentRole;
+    }
+
+    if (persisted.modelName.trim()) {
+      modelName.value = persisted.modelName.trim();
+    }
+
+    persistPreferences();
+  };
+
+  const loadFromStorage = () => {
+    const persisted = loadAppPreferences();
+    if (!persisted) {
+      return;
+    }
+
+    if (availableRoles.value.some((item) => item.id === persisted.currentRole)) {
+      currentRole.value = persisted.currentRole;
+    }
+
+    if (persisted.modelName.trim()) {
+      modelName.value = persisted.modelName.trim();
+    }
+  };
+
+  const saveToStorage = () => {
+    persistPreferences();
   };
 
   return {
@@ -81,6 +125,8 @@ export const useAppStore = defineStore('app', () => {
     modelName,
     setRole,
     setModel,
-    hydrateConfig
+    hydrateConfig,
+    loadFromStorage,
+    saveToStorage
   };
 });

@@ -2,6 +2,11 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 import type { ThemeMode } from '@/types/ui';
+import { loadUiState, saveUiState } from '@/utils/storage';
+
+const applyThemeToDocument = (theme: ThemeMode) => {
+  document.documentElement.dataset.theme = theme;
+};
 
 export const useUiStore = defineStore('ui', () => {
   const theme = ref<ThemeMode>('light');
@@ -9,13 +14,38 @@ export const useUiStore = defineStore('ui', () => {
   const isMobileDrawerOpen = ref(false);
   const globalLoading = ref(false);
 
+  const persist = () => {
+    saveUiState({
+      theme: theme.value,
+      sidebarCollapsed: sidebarCollapsed.value
+    });
+  };
+
+  const loadFromStorage = () => {
+    const persisted = loadUiState();
+    if (!persisted) {
+      applyThemeToDocument(theme.value);
+      return;
+    }
+
+    theme.value = persisted.theme;
+    sidebarCollapsed.value = persisted.sidebarCollapsed;
+    applyThemeToDocument(theme.value);
+  };
+
+  const saveToStorage = () => {
+    persist();
+  };
+
   const toggleTheme = () => {
     theme.value = theme.value === 'light' ? 'dark' : 'light';
-    document.documentElement.dataset.theme = theme.value;
+    applyThemeToDocument(theme.value);
+    persist();
   };
 
   const toggleSidebar = () => {
     sidebarCollapsed.value = !sidebarCollapsed.value;
+    persist();
   };
 
   const openMobileDrawer = () => {
@@ -39,6 +69,8 @@ export const useUiStore = defineStore('ui', () => {
     toggleSidebar,
     openMobileDrawer,
     closeMobileDrawer,
-    setGlobalLoading
+    setGlobalLoading,
+    loadFromStorage,
+    saveToStorage
   };
 });
