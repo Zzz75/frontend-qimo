@@ -18,6 +18,7 @@ const sessionStore = useSessionStore();
   border-radius: 8px;
   background: transparent;
   font: inherit;
+  color: var(--color-text);
 }
 
 .new-session-btn:hover {
