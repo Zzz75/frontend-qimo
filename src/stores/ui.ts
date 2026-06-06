@@ -23,18 +23,9 @@ export const useUiStore = defineStore('ui', () => {
 
   const loadFromStorage = () => {
     const persisted = loadUiState();
-    if (!persisted) {
-      applyThemeToDocument(theme.value);
-      return;
-    }
-
     theme.value = persisted.theme;
     sidebarCollapsed.value = persisted.sidebarCollapsed;
     applyThemeToDocument(theme.value);
-  };
-
-  const saveToStorage = () => {
-    persist();
   };
 
   const toggleTheme = () => {
@@ -70,7 +61,6 @@ export const useUiStore = defineStore('ui', () => {
     openMobileDrawer,
     closeMobileDrawer,
     setGlobalLoading,
-    loadFromStorage,
-    saveToStorage
+    loadFromStorage
   };
 });

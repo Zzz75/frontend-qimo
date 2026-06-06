@@ -12,33 +12,12 @@ const DEFAULT_ROLE_OPTIONS: RoleOption[] = [
   }
 ];
 
-const parseRoleOptions = (rawRoles: string | undefined): RoleOption[] => {
-  if (!rawRoles) {
-    return DEFAULT_ROLE_OPTIONS;
-  }
-
-  try {
-    const parsedRoles = JSON.parse(rawRoles) as RoleOption[];
-    const normalizedRoles = parsedRoles.filter(
-      (item) =>
-        typeof item?.id === 'string' &&
-        item.id.trim().length > 0 &&
-        typeof item?.label === 'string' &&
-        item.label.trim().length > 0
-    );
-
-    return normalizedRoles.length > 0 ? normalizedRoles : DEFAULT_ROLE_OPTIONS;
-  } catch {
-    return DEFAULT_ROLE_OPTIONS;
-  }
-};
-
 export const useAppStore = defineStore('app', () => {
   const currentRole = ref('default');
   const availableRoles = ref<RoleOption[]>(DEFAULT_ROLE_OPTIONS);
-  const apiBaseUrl = ref('');
-  const apiKey = ref('');
-  const modelName = ref('deepseek-chat');
+  const apiBaseUrl = ref(import.meta.env.VITE_API_BASE_URL);
+  const apiKey = ref(import.meta.env.VITE_API_KEY);
+  const modelName = ref(import.meta.env.VITE_MODEL_NAME ?? 'deepseek-chat');
 
   const persistPreferences = () => {
     saveAppPreferences({
@@ -48,72 +27,27 @@ export const useAppStore = defineStore('app', () => {
   };
 
   const setRole = (roleId: string) => {
-    const normalizedRoleId = roleId.trim();
-    const hasRole = availableRoles.value.some((item) => item.id === normalizedRoleId);
-    if (hasRole) {
-      currentRole.value = normalizedRoleId;
-      persistPreferences();
-    }
-  };
-
-  const setModel = (model: string) => {
-    const normalizedModel = model.trim();
-    if (normalizedModel) {
-      modelName.value = normalizedModel;
-      persistPreferences();
-    }
-  };
-
-  const hydrateConfig = () => {
-    availableRoles.value = parseRoleOptions(import.meta.env.VITE_AVAILABLE_ROLES);
-    apiBaseUrl.value = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
-    apiKey.value = import.meta.env.VITE_API_KEY?.trim() ?? '';
-
-    const envModelName = import.meta.env.VITE_MODEL_NAME?.trim();
-    if (envModelName) {
-      modelName.value = envModelName;
-    }
-
-    const envDefaultRole = import.meta.env.VITE_DEFAULT_ROLE?.trim() ?? 'default';
-    if (availableRoles.value.some((item) => item.id === envDefaultRole)) {
-      currentRole.value = envDefaultRole;
-    } else {
-      currentRole.value = availableRoles.value[0]?.id ?? 'default';
-    }
-
-    const persisted = loadAppPreferences();
-    if (!persisted) {
-      persistPreferences();
-      return;
-    }
-
-    if (availableRoles.value.some((item) => item.id === persisted.currentRole)) {
-      currentRole.value = persisted.currentRole;
-    }
-
-    if (persisted.modelName.trim()) {
-      modelName.value = persisted.modelName.trim();
-    }
-
+    currentRole.value = roleId;
     persistPreferences();
   };
 
-  const loadFromStorage = () => {
-    const persisted = loadAppPreferences();
-    if (!persisted) {
-      return;
-    }
-
-    if (availableRoles.value.some((item) => item.id === persisted.currentRole)) {
-      currentRole.value = persisted.currentRole;
-    }
-
-    if (persisted.modelName.trim()) {
-      modelName.value = persisted.modelName.trim();
-    }
+  const setModel = (model: string) => {
+    modelName.value = model;
+    persistPreferences();
   };
 
-  const saveToStorage = () => {
+  const hydrateConfig = () => {
+    if (import.meta.env.VITE_AVAILABLE_ROLES) {
+      availableRoles.value = JSON.parse(import.meta.env.VITE_AVAILABLE_ROLES);
+    }
+
+    if (import.meta.env.VITE_DEFAULT_ROLE) {
+      currentRole.value = import.meta.env.VITE_DEFAULT_ROLE;
+    }
+
+    const persisted = loadAppPreferences();
+    currentRole.value = persisted.currentRole;
+    modelName.value = persisted.modelName;
     persistPreferences();
   };
 
@@ -125,8 +59,6 @@ export const useAppStore = defineStore('app', () => {
     modelName,
     setRole,
     setModel,
-    hydrateConfig,
-    loadFromStorage,
-    saveToStorage
+    hydrateConfig
   };
 });

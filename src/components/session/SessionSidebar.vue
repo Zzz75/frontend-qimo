@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 
 import { useSessionStore } from '@/stores/session';
@@ -65,28 +65,22 @@ const openSingleDeleteDialog = (sessionId: string) => {
 };
 
 const openBatchDeleteDialog = () => {
-  if (selectedCount.value === 0) {
-    return;
-  }
   dialogMode.value = 'batch';
   dialogOpen.value = true;
 };
 
 const openDeleteAllDialog = () => {
-  if (!hasSessions.value) {
-    return;
-  }
   dialogMode.value = 'all';
   dialogOpen.value = true;
 };
 
 const confirmDelete = () => {
-  if (dialogMode.value === 'single' && pendingSessionId.value) {
-    sessionStore.deleteSession(pendingSessionId.value);
+  if (dialogMode.value === 'single') {
+    sessionStore.deleteSession(pendingSessionId.value!);
   } else if (dialogMode.value === 'batch') {
     sessionStore.deleteSessions(selectedSessionIds.value);
     clearSelection();
-  } else if (dialogMode.value === 'all') {
+  } else {
     sessionStore.deleteSessions(sessions.value.map((session) => session.id));
     clearSelection();
     isBatchMode.value = false;
@@ -116,22 +110,6 @@ const toggleSelectAll = () => {
   selectedSessionIds.value = sessions.value.map((session) => session.id);
 };
 
-watch(
-  sessions,
-  (nextSessions) => {
-    if (!isBatchMode.value) {
-      return;
-    }
-
-    const validIds = new Set(nextSessions.map((session) => session.id));
-    selectedSessionIds.value = selectedSessionIds.value.filter((id) => validIds.has(id));
-
-    if (nextSessions.length === 0) {
-      isBatchMode.value = false;
-    }
-  },
-  { deep: true }
-);
 </script>
 
 <template>

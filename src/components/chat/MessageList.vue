@@ -5,11 +5,14 @@ import { storeToRefs } from 'pinia';
 import EmptyState from '@/components/common/EmptyState.vue';
 import { useAutoScroll } from '@/composables/useAutoScroll';
 import { useChatStore } from '@/stores/chat';
+import { useSessionStore } from '@/stores/session';
 import MessageItem from './MessageItem.vue';
 import TypingIndicator from './TypingIndicator.vue';
 
 const chatStore = useChatStore();
+const sessionStore = useSessionStore();
 const { activeMessages, isStreaming, streamBuffer } = storeToRefs(chatStore);
+const { activeSessionId } = storeToRefs(sessionStore);
 
 const listRef = ref<HTMLElement | null>(null);
 const { scrollToBottom } = useAutoScroll(listRef);
@@ -25,7 +28,7 @@ watch(
 
 <template>
   <section ref="listRef" class="message-list" aria-label="消息列表">
-    <EmptyState v-if="activeMessages.length === 0 && !isStreaming" />
+    <EmptyState v-if="!activeSessionId" />
     <template v-else>
       <MessageItem
         v-for="message in activeMessages"

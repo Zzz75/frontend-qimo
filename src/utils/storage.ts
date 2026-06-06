@@ -26,113 +26,43 @@ export interface AppPersistState {
 
 export type MessagesPersistState = Record<string, ChatMessage[]>;
 
+const EMPTY_SESSION_STATE: SessionPersistState = { sessions: [], activeSessionId: null };
+const EMPTY_UI_STATE: UiPersistState = { theme: 'light', sidebarCollapsed: false };
+const EMPTY_APP_STATE: AppPersistState = { currentRole: 'default', modelName: 'deepseek-chat' };
+
 export const storage = {
   getItem<T>(key: string, fallback: T): T {
-    const rawValue = localStorage.getItem(key);
-    if (!rawValue) {
-      return fallback;
-    }
-
-    try {
-      return JSON.parse(rawValue) as T;
-    } catch {
-      return fallback;
-    }
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
   },
   setItem<T>(key: string, value: T): void {
     localStorage.setItem(key, JSON.stringify(value));
-  },
-  removeItem(key: string): void {
-    localStorage.removeItem(key);
   }
 };
 
-const isValidSession = (item: unknown): item is SessionSummary =>
-  typeof item === 'object' &&
-  item !== null &&
-  typeof (item as SessionSummary).id === 'string' &&
-  typeof (item as SessionSummary).title === 'string' &&
-  typeof (item as SessionSummary).updatedAt === 'number';
-
-const isValidMessage = (item: unknown): item is ChatMessage =>
-  typeof item === 'object' &&
-  item !== null &&
-  typeof (item as ChatMessage).id === 'string' &&
-  typeof (item as ChatMessage).role === 'string' &&
-  typeof (item as ChatMessage).content === 'string' &&
-  typeof (item as ChatMessage).createdAt === 'number';
-
-export const loadSessionState = (): SessionPersistState => {
-  const fallback: SessionPersistState = { sessions: [], activeSessionId: null };
-  const raw = storage.getItem<SessionPersistState>(STORAGE_KEYS.sessions, fallback);
-  const sessions = Array.isArray(raw.sessions)
-    ? raw.sessions.filter(isValidSession)
-    : [];
-
-  const activeSessionId =
-    typeof raw.activeSessionId === 'string' &&
-    sessions.some((item) => item.id === raw.activeSessionId)
-      ? raw.activeSessionId
-      : sessions[0]?.id ?? null;
-
-  return { sessions, activeSessionId };
-};
+export const loadSessionState = (): SessionPersistState =>
+  storage.getItem(STORAGE_KEYS.sessions, EMPTY_SESSION_STATE);
 
 export const saveSessionState = (state: SessionPersistState): void => {
   storage.setItem(STORAGE_KEYS.sessions, state);
 };
 
-export const loadMessagesState = (): MessagesPersistState => {
-  const raw = storage.getItem<MessagesPersistState>(STORAGE_KEYS.messages, {});
-  if (!raw || typeof raw !== 'object') {
-    return {};
-  }
-
-  return Object.entries(raw).reduce<MessagesPersistState>((acc, [sessionId, messages]) => {
-    if (!Array.isArray(messages)) {
-      return acc;
-    }
-    acc[sessionId] = messages.filter(isValidMessage);
-    return acc;
-  }, {});
-};
+export const loadMessagesState = (): MessagesPersistState =>
+  storage.getItem(STORAGE_KEYS.messages, {});
 
 export const saveMessagesState = (state: MessagesPersistState): void => {
   storage.setItem(STORAGE_KEYS.messages, state);
 };
 
-export const loadUiState = (): UiPersistState | null => {
-  const raw = storage.getItem<Partial<UiPersistState> | null>(STORAGE_KEYS.ui, null);
-  if (!raw) {
-    return null;
-  }
-
-  const theme: ThemeMode = raw.theme === 'dark' ? 'dark' : 'light';
-  return {
-    theme,
-    sidebarCollapsed: Boolean(raw.sidebarCollapsed)
-  };
-};
+export const loadUiState = (): UiPersistState =>
+  storage.getItem(STORAGE_KEYS.ui, EMPTY_UI_STATE);
 
 export const saveUiState = (state: UiPersistState): void => {
   storage.setItem(STORAGE_KEYS.ui, state);
 };
 
-export const loadAppPreferences = (): AppPersistState | null => {
-  const raw = storage.getItem<Partial<AppPersistState> | null>(STORAGE_KEYS.app, null);
-  if (!raw) {
-    return null;
-  }
-
-  if (typeof raw.currentRole !== 'string' || typeof raw.modelName !== 'string') {
-    return null;
-  }
-
-  return {
-    currentRole: raw.currentRole,
-    modelName: raw.modelName
-  };
-};
+export const loadAppPreferences = (): AppPersistState =>
+  storage.getItem(STORAGE_KEYS.app, EMPTY_APP_STATE);
 
 export const saveAppPreferences = (state: AppPersistState): void => {
   storage.setItem(STORAGE_KEYS.app, state);

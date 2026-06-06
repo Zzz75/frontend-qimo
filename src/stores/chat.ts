@@ -3,7 +3,6 @@ import { computed, ref } from 'vue';
 
 import { createChatStream } from '@/api/chat';
 import type { ChatRequestMessage } from '@/api/types';
-import { useStreamResponse } from '@/composables/useStreamResponse';
 import { useAppStore } from '@/stores/app';
 import { useSessionStore } from '@/stores/session';
 import type { ChatMessage } from '@/types/chat';
@@ -16,28 +15,19 @@ export const useChatStore = defineStore('chat', () => {
   const isStreaming = ref(false);
   const streamBuffer = ref('');
   const error = ref<string | null>(null);
-  const pendingAssistantMessageId = ref<string | null>(null);
-  const lastFailedUserContent = ref<string | null>(null);
-  const streamResponse = useStreamResponse();
 
-  const activeMessages = computed<ChatMessage[]>(() => {
-    const sessionStore = useSessionStore();
-    const sessionId = sessionStore.activeSessionId;
-    if (!sessionId) {
-      return [];
-    }
-    return messagesBySession.value[sessionId] ?? [];
-  });
+  const sessionStore = useSessionStore();
 
-  const canSend = computed(() => {
-    const sessionStore = useSessionStore();
-    return !isSending.value && Boolean(sessionStore.activeSessionId);
-  });
+  const activeMessages = computed(() =>
+    messagesBySession.value[sessionStore.activeSessionId!]
+  );
+
+  const canSend = computed(
+    () => !isSending.value && Boolean(sessionStore.activeSessionId)
+  );
 
   const getSessionMessages = (sessionId: string): ChatMessage[] => {
-    if (!messagesBySession.value[sessionId]) {
-      messagesBySession.value[sessionId] = [];
-    }
+    messagesBySession.value[sessionId] ??= [];
     return messagesBySession.value[sessionId];
   };
 
@@ -49,240 +39,70 @@ export const useChatStore = defineStore('chat', () => {
     messagesBySession.value = loadMessagesState();
   };
 
-  const saveToStorage = () => {
-    persistMessages();
-  };
-
   const removeMessagesForSession = (sessionId: string) => {
-    if (!(sessionId in messagesBySession.value)) {
-      return;
-    }
     const { [sessionId]: _removed, ...rest } = messagesBySession.value;
     messagesBySession.value = rest;
     persistMessages();
   };
 
-  const appendUserMessage = (payload: ChatMessage) => {
-    const sessionStore = useSessionStore();
-    const sessionId = sessionStore.activeSessionId;
-    if (!sessionId) {
-      return;
-    }
+  const toRequestMessages = (messages: ChatMessage[]): ChatRequestMessage[] =>
+    messages.map((item) => ({
+      role: item.role,
+      content: item.content
+    }));
+
+  const sendMessage = async (content: string) => {
+    const sessionId = sessionStore.activeSessionId!;
+    isSending.value = true;
+    error.value = null;
 
     const messages = getSessionMessages(sessionId);
-    messages.push(payload);
-    sessionStore.touchSession(sessionId, payload.content);
-    persistMessages();
-  };
 
-  const beginAssistantMessage = (): string | null => {
-    const sessionStore = useSessionStore();
-    const sessionId = sessionStore.activeSessionId;
-    if (!sessionId) {
-      return null;
-    }
+    messages.push({
+      id: createId(),
+      role: 'user',
+      content: content.trim(),
+      createdAt: Date.now()
+    });
+    sessionStore.touchSession(sessionId, messages[messages.length - 1].content);
 
-    const assistantMessage: ChatMessage = {
+    const assistantIndex = messages.length;
+    messages.push({
       id: createId(),
       role: 'assistant',
       content: '',
       createdAt: Date.now()
-    };
-
-    getSessionMessages(sessionId).push(assistantMessage);
-    pendingAssistantMessageId.value = assistantMessage.id;
+    });
     isStreaming.value = true;
-    streamBuffer.value = streamResponse.resetStream();
-    return assistantMessage.id;
-  };
-
-  const appendAssistantMessageChunk = (chunk: string) => {
-    if (!chunk) {
-      return;
-    }
-
-    const sessionStore = useSessionStore();
-    const sessionId = sessionStore.activeSessionId;
-    const messageId = pendingAssistantMessageId.value;
-    if (!sessionId || !messageId) {
-      return;
-    }
-
-    const message = getSessionMessages(sessionId).find((item) => item.id === messageId);
-    if (!message) {
-      return;
-    }
-
-    const nextBuffer = streamResponse.appendChunk(chunk);
-    message.content = nextBuffer;
-    streamBuffer.value = nextBuffer;
-  };
-
-  const finalizeAssistantMessage = () => {
-    const sessionStore = useSessionStore();
-    const sessionId = sessionStore.activeSessionId;
-    const messageId = pendingAssistantMessageId.value;
-
-    if (sessionId && messageId) {
-      const message = getSessionMessages(sessionId).find((item) => item.id === messageId);
-      if (message?.content.trim()) {
-        sessionStore.touchSession(sessionId);
-      }
-    }
-
-    isStreaming.value = false;
-    streamResponse.finalizeStream();
     streamBuffer.value = '';
-    pendingAssistantMessageId.value = null;
-    lastFailedUserContent.value = null;
-    persistMessages();
-  };
 
-  const removeIncompleteAssistantMessage = () => {
-    const sessionStore = useSessionStore();
-    const sessionId = sessionStore.activeSessionId;
-    const messageId = pendingAssistantMessageId.value;
-    if (!sessionId || !messageId) {
-      return;
-    }
-
-    const messages = getSessionMessages(sessionId);
-    const targetIndex = messages.findIndex((item) => item.id === messageId);
-    if (targetIndex === -1) {
-      return;
-    }
-
-    const target = messages[targetIndex];
-    if (!target.content.trim()) {
-      messages.splice(targetIndex, 1);
-    }
-  };
-
-  const rollbackSendingState = () => {
-    removeIncompleteAssistantMessage();
-    isStreaming.value = false;
-    streamResponse.resetStream();
-    streamBuffer.value = '';
-    pendingAssistantMessageId.value = null;
-    persistMessages();
-  };
-
-  const toRequestMessages = (messages: ChatMessage[]): ChatRequestMessage[] =>
-    messages
-      .filter((item) => item.content.trim().length > 0)
-      .map((item) => ({
-        role: item.role,
-        content: item.content
-      }));
-
-  const handleStreamError = (message: string) => {
-    error.value = message;
-    rollbackSendingState();
-  };
-
-  const requestAssistantStream = async (sessionId: string): Promise<boolean> => {
     const appStore = useAppStore();
-    beginAssistantMessage();
-
-    const requestMessages = toRequestMessages(getSessionMessages(sessionId));
-    let streamFinished = false;
-    let streamSucceeded = false;
-
-    try {
-      await createChatStream(
-        {
-          model: appStore.modelName,
-          messages: requestMessages,
-          stream: true
+    await createChatStream(
+      {
+        model: appStore.modelName,
+        messages: toRequestMessages(messages),
+        stream: true
+      },
+      {
+        onChunk: (chunk) => {
+          // 必须通过响应式数组更新，直接改局部变量不会触发视图刷新
+          messages[assistantIndex].content += chunk;
+          streamBuffer.value = messages[assistantIndex].content;
         },
-        {
-          onChunk: appendAssistantMessageChunk,
-          onDone: () => {
-            streamFinished = true;
-            streamSucceeded = true;
-            finalizeAssistantMessage();
-          },
-          onError: (message) => {
-            streamFinished = true;
-            streamSucceeded = false;
-            handleStreamError(message);
-          }
+        onDone: () => {
+          isStreaming.value = false;
+          sessionStore.touchSession(sessionId);
+          persistMessages();
+        },
+        onError: (message) => {
+          error.value = message;
+          isStreaming.value = false;
+          persistMessages();
         }
-      );
-    } catch (streamError) {
-      const message =
-        streamError instanceof Error ? streamError.message : '消息发送失败，请稍后重试';
-      handleStreamError(message);
-      return false;
-    }
-
-    if (streamFinished) {
-      return streamSucceeded;
-    }
-
-    const assistantMessage = getSessionMessages(sessionId).find(
-      (item) => item.id === pendingAssistantMessageId.value
+      }
     );
-    if (assistantMessage?.content.trim()) {
-      finalizeAssistantMessage();
-      return true;
-    }
 
-    handleStreamError('流式响应未完成，请稍后重试');
-    return false;
-  };
-
-  const sendMessage = async (content: string) => {
-    const trimmedContent = content.trim();
-    if (!trimmedContent || isSending.value) {
-      return;
-    }
-
-    const sessionStore = useSessionStore();
-    const sessionId = sessionStore.activeSessionId;
-    if (!sessionId) {
-      return;
-    }
-
-    clearError();
-    isSending.value = true;
-    lastFailedUserContent.value = trimmedContent;
-
-    const userMessage: ChatMessage = {
-      id: createId(),
-      role: 'user',
-      content: trimmedContent,
-      createdAt: Date.now()
-    };
-    appendUserMessage(userMessage);
-
-    try {
-      await requestAssistantStream(sessionId);
-    } finally {
-      isSending.value = false;
-    }
-  };
-
-  const retryLastMessage = async () => {
-    if (isSending.value) {
-      return;
-    }
-
-    const sessionStore = useSessionStore();
-    const sessionId = sessionStore.activeSessionId;
-    const content = lastFailedUserContent.value;
-    if (!sessionId || !content) {
-      return;
-    }
-
-    clearError();
-    isSending.value = true;
-
-    try {
-      await requestAssistantStream(sessionId);
-    } finally {
-      isSending.value = false;
-    }
+    isSending.value = false;
   };
 
   const clearError = () => {
@@ -298,13 +118,8 @@ export const useChatStore = defineStore('chat', () => {
     activeMessages,
     canSend,
     sendMessage,
-    appendUserMessage,
-    appendAssistantMessageChunk,
-    finalizeAssistantMessage,
-    retryLastMessage,
     clearError,
     loadFromStorage,
-    saveToStorage,
     removeMessagesForSession
   };
 });

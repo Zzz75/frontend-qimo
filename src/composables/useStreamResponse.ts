@@ -4,9 +4,6 @@ export const useStreamResponse = () => {
   const streamText = ref('');
 
   const appendChunk = (chunk: string) => {
-    if (!chunk) {
-      return streamText.value;
-    }
     streamText.value += chunk;
     return streamText.value;
   };

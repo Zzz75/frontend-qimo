@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
 
 import { useChatStore } from '@/stores/chat';
@@ -10,13 +10,8 @@ const { canSend, isSending } = storeToRefs(chatStore);
 const draft = ref('');
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
-const isEmpty = computed(() => draft.value.trim().length === 0);
-const isDisabled = computed(() => !canSend.value || isEmpty.value);
-
 const handleSend = async () => {
   const content = draft.value.trim();
-  if (!content || isDisabled.value) return;
-
   draft.value = '';
   await chatStore.sendMessage(content);
   textareaRef.value?.focus();
@@ -43,7 +38,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     <button
       type="button"
       class="send-btn"
-      :disabled="isDisabled"
+      :disabled="!canSend"
       @click="handleSend"
     >
       {{ isSending ? '发送中...' : '发送' }}

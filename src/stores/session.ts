@@ -12,9 +12,6 @@ const SESSION_TITLE_MAX_LENGTH = 24;
 
 const truncateTitle = (content: string): string => {
   const normalized = content.replace(/\s+/g, ' ').trim();
-  if (!normalized) {
-    return DEFAULT_SESSION_TITLE;
-  }
   return normalized.length > SESSION_TITLE_MAX_LENGTH
     ? `${normalized.slice(0, SESSION_TITLE_MAX_LENGTH)}…`
     : normalized;
@@ -25,7 +22,7 @@ export const useSessionStore = defineStore('session', () => {
   const activeSessionId = ref<string | null>(null);
 
   const activeSession = computed(() =>
-    sessions.value.find((item) => item.id === activeSessionId.value) ?? null
+    sessions.value.find((item) => item.id === activeSessionId.value)!
   );
 
   const persist = () => {
@@ -36,10 +33,7 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const touchSession = (sessionId: string, titleSource?: string) => {
-    const session = sessions.value.find((item) => item.id === sessionId);
-    if (!session) {
-      return;
-    }
+    const session = sessions.value.find((item) => item.id === sessionId)!;
 
     if (titleSource && session.title === DEFAULT_SESSION_TITLE) {
       session.title = truncateTitle(titleSource);
@@ -57,35 +51,21 @@ export const useSessionStore = defineStore('session', () => {
       title: DEFAULT_SESSION_TITLE,
       updatedAt: now
     };
+
     sessions.value.unshift(session);
     activeSessionId.value = session.id;
     persist();
     useUiStore().closeMobileDrawer();
-    return session.id;
   };
 
   const deleteSessions = (sessionIds: string[]) => {
-    const uniqueIds = Array.from(new Set(sessionIds));
-    if (uniqueIds.length === 0) {
-      return;
-    }
+    const targetIds = new Set(sessionIds);
+    sessions.value = sessions.value.filter((item) => !targetIds.has(item.id));
 
-    const targetIds = new Set(uniqueIds);
-    const nextSessions = sessions.value.filter((item) => !targetIds.has(item.id));
-    if (nextSessions.length === sessions.value.length) {
-      return;
-    }
-
-    sessions.value = nextSessions;
     const chatStore = useChatStore();
-    uniqueIds.forEach((id) => {
-      chatStore.removeMessagesForSession(id);
-    });
+    sessionIds.forEach((id) => chatStore.removeMessagesForSession(id));
 
-    if (!activeSessionId.value || targetIds.has(activeSessionId.value)) {
-      activeSessionId.value = sessions.value[0]?.id ?? null;
-    }
-
+    activeSessionId.value = sessions.value[0]?.id ?? null;
     persist();
   };
 
@@ -94,9 +74,6 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const switchSession = (sessionId: string) => {
-    if (!sessions.value.some((item) => item.id === sessionId)) {
-      return;
-    }
     activeSessionId.value = sessionId;
     persist();
     useUiStore().closeMobileDrawer();
@@ -108,10 +85,6 @@ export const useSessionStore = defineStore('session', () => {
     activeSessionId.value = persisted.activeSessionId;
   };
 
-  const saveToStorage = () => {
-    persist();
-  };
-
   return {
     sessions,
     activeSessionId,
@@ -121,7 +94,6 @@ export const useSessionStore = defineStore('session', () => {
     deleteSessions,
     switchSession,
     touchSession,
-    loadFromStorage,
-    saveToStorage
+    loadFromStorage
   };
 });
