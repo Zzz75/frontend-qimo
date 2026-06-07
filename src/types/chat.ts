@@ -6,9 +6,3 @@ export interface ChatMessage {
   content: string;
   createdAt: number;
 }
-
-export interface RoleOption {
-  id: string;
-  label: string;
-  description?: string;
-}

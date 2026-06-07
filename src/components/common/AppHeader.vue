@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router';
 import { storeToRefs } from 'pinia';
 
 import { useUiStore } from '@/stores/ui';
@@ -30,10 +29,6 @@ const { theme } = storeToRefs(uiStore);
       >
         {{ theme === 'light' ? '深色' : '浅色' }}
       </button>
-      <button type="button" class="header-btn" disabled title="即将推出">
-        角色
-      </button>
-      <RouterLink to="/settings">设置</RouterLink>
     </nav>
   </header>
 </template>
@@ -95,12 +90,6 @@ const { theme } = storeToRefs(uiStore);
 .header-btn:focus-visible {
   outline: 2px solid var(--color-text);
   outline-offset: 2px;
-}
-
-.header-btn:disabled {
-  opacity: 0.45;
-  color: var(--color-text-secondary);
-  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

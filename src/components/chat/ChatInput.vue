@@ -64,6 +64,8 @@ textarea {
   border-radius: 8px;
   font: inherit;
   line-height: 1.5;
+  background: var(--color-panel);
+  color: var(--color-text);
 }
 
 textarea:disabled {
@@ -74,10 +76,9 @@ textarea:disabled {
 .send-btn {
   align-self: flex-end;
   padding: 8px 20px;
-  border: none;
   border-radius: 8px;
-  background: var(--color-text);
-  color: var(--color-panel);
+  background: var(--color-panel);
+  color: var(--color-text);
   font: inherit;
 }
 

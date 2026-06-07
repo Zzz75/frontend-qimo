@@ -20,7 +20,6 @@ export interface UiPersistState {
 }
 
 export interface AppPersistState {
-  currentRole: string;
   modelName: string;
 }
 
@@ -28,7 +27,7 @@ export type MessagesPersistState = Record<string, ChatMessage[]>;
 
 const EMPTY_SESSION_STATE: SessionPersistState = { sessions: [], activeSessionId: null };
 const EMPTY_UI_STATE: UiPersistState = { theme: 'light', sidebarCollapsed: false };
-const EMPTY_APP_STATE: AppPersistState = { currentRole: 'default', modelName: 'deepseek-chat' };
+const EMPTY_APP_STATE: AppPersistState = { modelName: 'deepseek-chat' };
 
 export const storage = {
   getItem<T>(key: string, fallback: T): T {
