@@ -85,7 +85,7 @@ export const useChatStore = defineStore('chat', () => {
       },
       {
         onChunk: (chunk) => {
-          // 必须通过响应式数组更新，直接改局部变量不会触发视图刷新
+          // 通过响应式数组更新，直接改局部变量不会触发视图刷新
           messages[assistantIndex].content += chunk;
           streamBuffer.value = messages[assistantIndex].content;
         },

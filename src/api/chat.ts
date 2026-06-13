@@ -1,6 +1,5 @@
 import apiClient, { getAuthHeaders } from './client';
 import type { ChatRequest, ChatResponse } from './types';
-import { createId } from '@/utils/id';
 
 export interface ChatStreamHandlers {
   onChunk: (chunk: string) => void;
@@ -48,7 +47,6 @@ export const createChatStream = async (
     headers: {
       Accept: 'text/event-stream',
       'Content-Type': 'application/json',
-      'X-Request-Id': createId(),
       ...getAuthHeaders()
     },
     body: JSON.stringify({ ...payload, stream: true })

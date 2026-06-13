@@ -6,7 +6,7 @@ import { loadAppPreferences, saveAppPreferences } from '@/utils/storage';
 export const useAppStore = defineStore('app', () => {
   const apiBaseUrl = ref(import.meta.env.VITE_API_BASE_URL);
   const apiKey = ref(import.meta.env.VITE_API_KEY);
-  const modelName = ref(import.meta.env.VITE_MODEL_NAME ?? 'deepseek-chat');
+  const modelName = ref(import.meta.env.VITE_MODEL_NAME ?? 'deepseek-v4-flash');
 
   const persistPreferences = () => {
     saveAppPreferences({
