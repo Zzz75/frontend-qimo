@@ -1,3 +1,8 @@
+<!--
+  错误提示条 ErrorToast
+  API 失败等场景显示红色条，用户可点 × 关闭
+-->
+
 <script setup lang="ts">
 interface ErrorToastProps {
   message?: string;
@@ -7,12 +12,14 @@ withDefaults(defineProps<ErrorToastProps>(), {
   message: '请求失败，请稍后重试。'
 });
 
+// defineEmits：声明组件会向外触发的事件
 const emit = defineEmits<{
-  dismiss: [];
+  dismiss: []; // 关闭时触发，父组件监听 @dismiss
 }>();
 </script>
 
 <template>
+  <!-- role="alert"：读屏软件会立即播报错误 -->
   <div class="error-toast" role="alert">
     <span class="error-message">{{ message }}</span>
     <button type="button" class="dismiss-btn" aria-label="关闭错误提示" @click="emit('dismiss')">
@@ -30,8 +37,8 @@ const emit = defineEmits<{
   margin: 0 16px 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #ffe9e9;
-  color: #9d2121;
+  background: #ffe9e9; /* 浅红背景 */
+  color: #9d2121;      /* 深红文字 */
 }
 
 .error-message {
@@ -40,7 +47,7 @@ const emit = defineEmits<{
 }
 
 .dismiss-btn {
-  flex-shrink: 0;
+  flex-shrink: 0; /* 不被压缩 */
   width: 24px;
   height: 24px;
   border: none;

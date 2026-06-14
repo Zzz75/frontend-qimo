@@ -1,9 +1,15 @@
+/* ============================================================
+   Markdown 消息样式 markdown.css
+   AI 回复经 MarkdownRenderer 渲染后的 HTML 用这个类名 .markdown-body
+   ============================================================ */
+
 .markdown-body {
-  line-height: 1.65;
-  word-break: break-word;
+  line-height: 1.65;              /* 行高，阅读更舒适 */
+  word-break: break-word;         /* 长单词/URL 自动换行 */
   color: var(--color-text);
 }
 
+/* 代码块：深色底，可横向滚动 */
 .markdown-body pre {
   overflow: auto;
   padding: 12px;
@@ -11,6 +17,7 @@
   background: #0f172a;
 }
 
+/* 各级标题统一间距 */
 .markdown-body :is(h1, h2, h3, h4, h5, h6) {
   margin: 1em 0 0.5em;
   line-height: 1.35;
@@ -20,11 +27,13 @@
   margin: 0.65em 0;
 }
 
+/* 有序/无序列表缩进 */
 .markdown-body :is(ul, ol) {
   padding-left: 1.4em;
   margin: 0.65em 0;
 }
 
+/* 引用块：左侧竖线 + 浅底 */
 .markdown-body blockquote {
   margin: 0.75em 0;
   padding: 0.5em 0.9em;
@@ -32,6 +41,7 @@
   background: var(--color-bg);
 }
 
+/* 表格：合并边框，全宽 */
 .markdown-body table {
   border-collapse: collapse;
   width: 100%;
@@ -45,11 +55,13 @@
   padding: 6px 8px;
 }
 
+/* 链接：蓝色带下划线 */
 .markdown-body a {
   color: #2563eb;
   text-decoration: underline;
 }
 
+/* 图片：不超出容器宽度 */
 .markdown-body img {
   max-width: 100%;
   height: auto;

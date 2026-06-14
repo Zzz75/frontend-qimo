@@ -1,4 +1,11 @@
-<script setup lang="ts"></script>
+<!--
+  打字指示器 TypingIndicator
+  AI 正在流式回复时，在消息列表底部显示「AI 正在思考中」和跳动的点
+-->
+
+<script setup lang="ts">
+// 纯展示组件，无逻辑
+</script>
 
 <template>
   <div class="typing-indicator" aria-live="polite" role="status">
@@ -15,7 +22,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
-  border-radius: 999px;
+  border-radius: 999px; /* 胶囊形圆角 */
   background: var(--color-bg);
   width: fit-content;
   font-size: 13px;
@@ -33,7 +40,7 @@
   border-radius: 50%;
   background: currentColor;
   opacity: 0.3;
-  animation: blink 1.1s infinite ease-in-out;
+  animation: blink 1.1s infinite ease-in-out; /* 三个点轮流闪烁 */
 }
 
 .typing-dots i:nth-child(2) {

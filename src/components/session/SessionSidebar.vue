@@ -1,3 +1,8 @@
+<!--
+  会话侧边栏 SessionSidebar
+  左侧：新建会话、会话列表、批量删除、删除确认弹窗
+-->
+
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -7,16 +12,17 @@ import NewSessionButton from './NewSessionButton.vue';
 import SessionDeleteDialog from './SessionDeleteDialog.vue';
 import SessionItem from './SessionItem.vue';
 
+// 删除弹窗的三种模式：删一个 / 删选中 / 删全部
 type DeleteDialogMode = 'single' | 'batch' | 'all';
 
 const sessionStore = useSessionStore();
 const { sessions, activeSessionId } = storeToRefs(sessionStore);
 
-const isBatchMode = ref(false);
-const selectedSessionIds = ref<string[]>([]);
-const dialogOpen = ref(false);
+const isBatchMode = ref(false);              // 是否处于批量勾选模式
+const selectedSessionIds = ref<string[]>([]); // 批量模式下勾选的会话 id 列表
+const dialogOpen = ref(false);               // 删除确认弹窗是否打开
 const dialogMode = ref<DeleteDialogMode>('single');
-const pendingSessionId = ref<string | null>(null);
+const pendingSessionId = ref<string | null>(null); // 单个删除时待删的会话 id
 
 const selectedCount = computed(() => selectedSessionIds.value.length);
 const hasSessions = computed(() => sessions.value.length > 0);
@@ -28,6 +34,7 @@ const pendingSession = computed(() =>
   sessions.value.find((item) => item.id === pendingSessionId.value) ?? null
 );
 
+// 根据删除模式动态生成弹窗标题和说明
 const dialogTitle = computed(() => {
   if (dialogMode.value === 'all') {
     return '删除全部会话';
@@ -58,22 +65,26 @@ const closeDialog = () => {
   pendingSessionId.value = null;
 };
 
+/** 打开「删除单个会话」确认框 */
 const openSingleDeleteDialog = (sessionId: string) => {
   pendingSessionId.value = sessionId;
   dialogMode.value = 'single';
   dialogOpen.value = true;
 };
 
+/** 打开「删除所选」确认框 */
 const openBatchDeleteDialog = () => {
   dialogMode.value = 'batch';
   dialogOpen.value = true;
 };
 
+/** 打开「删除全部」确认框 */
 const openDeleteAllDialog = () => {
   dialogMode.value = 'all';
   dialogOpen.value = true;
 };
 
+/** 用户在弹窗里点确认后，按模式调用 store 删除 */
 const confirmDelete = () => {
   if (dialogMode.value === 'single') {
     sessionStore.deleteSession(pendingSessionId.value!);
@@ -88,6 +99,7 @@ const confirmDelete = () => {
   closeDialog();
 };
 
+/** 进入/退出批量管理模式 */
 const toggleBatchMode = () => {
   isBatchMode.value = !isBatchMode.value;
   if (!isBatchMode.value) {
@@ -127,6 +139,7 @@ const toggleSelectAll = () => {
       </button>
     </header>
 
+    <!-- 批量模式工具栏 -->
     <section v-if="hasSessions && isBatchMode" class="batch-toolbar">
       <div class="batch-toolbar__row">
         <button type="button" class="toolbar-btn" @click="toggleSelectAll">

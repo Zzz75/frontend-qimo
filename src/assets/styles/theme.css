@@ -1,12 +1,20 @@
+/* ============================================================
+   主题变量 theme.css
+   用 CSS 变量定义颜色，切换 data-theme 即可换肤
+   ui.ts 里会设置 <html data-theme="light|dark">
+   ============================================================ */
+
+/* 浅色主题（默认） */
 :root,
 :root[data-theme='light'] {
-  --color-bg: #f7f8fa;
-  --color-panel: #ffffff;
-  --color-text: #1f2329;
-  --color-text-secondary: #5f6b7a;
-  --color-border: #e5e8ef;
+  --color-bg: #f7f8fa;              /* 页面背景灰 */
+  --color-panel: #ffffff;           /* 卡片、面板白底 */
+  --color-text: #1f2329;            /* 主文字色 */
+  --color-text-secondary: #5f6b7a;  /* 次要文字（更淡） */
+  --color-border: #e5e8ef;          /* 边框线颜色 */
 }
 
+/* 深色主题 */
 :root[data-theme='dark'] {
   --color-bg: #141414;
   --color-panel: #1f1f1f;
@@ -15,17 +23,20 @@
   --color-border: #333333;
 }
 
+/* 页面默认背景和文字色使用变量 */
 html,
 body {
   background: var(--color-bg);
   color: var(--color-text);
 }
 
+/* 链接继承文字色，去掉下划线（Markdown 里链接单独设样式） */
 a {
   color: inherit;
   text-decoration: none;
 }
 
+/* 按钮默认手型光标，表示可点击 */
 button {
   cursor: pointer;
 }

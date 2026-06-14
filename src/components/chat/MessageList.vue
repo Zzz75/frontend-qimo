@@ -1,3 +1,8 @@
+<!--
+  ???? MessageList
+  ???????????????????????????
+-->
+
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -27,7 +32,7 @@ watch(
 </script>
 
 <template>
-  <section ref="listRef" class="message-list" aria-label="消息列表">
+  <section ref="listRef" class="message-list" aria-label="????">
     <EmptyState v-if="!activeSessionId" />
     <template v-else>
       <MessageItem

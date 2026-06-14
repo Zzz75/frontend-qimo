@@ -1,11 +1,16 @@
+<!--
+  删除会话确认弹窗
+  Teleport：把弹窗渲染到 body 下，避免被父元素 overflow 裁切
+-->
+
 <script setup lang="ts">
 import { onUnmounted, watch } from 'vue';
 
 interface SessionDeleteDialogProps {
-  open: boolean;
-  title: string;
-  description: string;
-  confirmLabel?: string;
+  open: boolean;        // 是否显示弹窗
+  title: string;          // 标题，如「删除会话」
+  description: string;    // 说明文字
+  confirmLabel?: string;  // 确认按钮文字
 }
 
 const props = withDefaults(defineProps<SessionDeleteDialogProps>(), {
@@ -13,20 +18,23 @@ const props = withDefaults(defineProps<SessionDeleteDialogProps>(), {
 });
 
 const emit = defineEmits<{
-  close: [];
-  confirm: [];
+  close: [];    // 取消或点遮罩
+  confirm: [];  // 确认删除
 }>();
 
+/** 点击半透明背景关闭 */
 const handleBackdropClick = () => {
   emit('close');
 };
 
+/** Esc 键关闭 */
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     emit('close');
   }
 };
 
+// 弹窗打开时监听 Esc，关闭或组件销毁时移除监听
 watch(
   () => props.open,
   (isOpen) => {
@@ -45,6 +53,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- to="body"：挂到 document.body 下 -->
   <Teleport to="body">
     <div
       v-if="open"
@@ -52,6 +61,7 @@ onUnmounted(() => {
       role="presentation"
       @click="handleBackdropClick"
     >
+      <!-- @click.stop：点面板内部不关闭 -->
       <div
         class="session-delete-dialog__panel"
         role="alertdialog"
@@ -81,7 +91,7 @@ onUnmounted(() => {
 <style scoped>
 .session-delete-dialog {
   position: fixed;
-  inset: 0;
+  inset: 0; /* 铺满整个视口 */
   z-index: 100;
   display: grid;
   place-items: center;

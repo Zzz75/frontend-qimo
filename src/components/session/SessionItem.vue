@@ -1,8 +1,13 @@
+<!--
+  单个会话条目 SessionItem
+  侧边栏里的一行：点击切换会话，右侧有删除按钮
+-->
+
 <script setup lang="ts">
 interface SessionItemProps {
-  title: string;
-  active?: boolean;
-  showMenu?: boolean;
+  title: string;      // 会话标题
+  active?: boolean;   // 是否为当前选中会话
+  showMenu?: boolean; // 是否显示删除按钮（批量模式下隐藏）
 }
 
 withDefaults(defineProps<SessionItemProps>(), {
@@ -10,6 +15,7 @@ withDefaults(defineProps<SessionItemProps>(), {
   showMenu: true
 });
 
+// select：点击主区域切换会话；manage：点击删除
 const emit = defineEmits<{
   select: [];
   manage: [];
@@ -18,6 +24,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="session-item-wrap" :class="{ 'is-active': active }">
+    <!-- 点击标题区域 → 切换到这个会话 -->
     <button
       type="button"
       class="session-item__main"
@@ -26,6 +33,7 @@ const emit = defineEmits<{
     >
       <span class="session-item__title">{{ title }}</span>
     </button>
+    <!-- 删除按钮；@click.stop 阻止冒泡，避免同时触发 select -->
     <button
       v-if="showMenu"
       type="button"
@@ -81,7 +89,7 @@ const emit = defineEmits<{
 .session-item__title {
   display: block;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: ellipsis; /* 标题过长显示省略号 */
   white-space: nowrap;
 }
 
