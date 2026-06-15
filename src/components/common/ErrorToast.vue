@@ -9,7 +9,7 @@ interface ErrorToastProps {
 }
 
 withDefaults(defineProps<ErrorToastProps>(), {
-  message: '请求失败，请稍后重试。'
+  message: '请求失败'
 });
 
 // defineEmits：声明组件会向外触发的事件

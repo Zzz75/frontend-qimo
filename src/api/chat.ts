@@ -16,6 +16,7 @@ export interface ChatStreamHandlers {
 
 // 聊天补全接口路径（相对 baseURL）
 const CHAT_COMPLETION_PATH = '/chat/completions';
+const CHAT_REQUEST_FAILED = '请求失败';
 
 // 流式 JSON 里 choices 的结构（兼容 OpenAI 风格 API）
 interface StreamChoice {
@@ -25,6 +26,7 @@ interface StreamChoice {
 
 interface StreamPayload {
   choices?: StreamChoice[];
+  error?: { message?: string; code?: string };
 }
 
 /** 从流式 JSON 里取出文本内容 */
@@ -45,7 +47,7 @@ const parseSseEventData = (rawEvent: string): string =>
 /** 拼出完整的聊天接口 URL（baseURL + 路径） */
 const getChatCompletionUrl = (): string => {
   const baseURL = apiClient.defaults.baseURL!;
-  return new URL(CHAT_COMPLETION_PATH, `${baseURL.replace(/\/+$/, '')}/`).toString();
+  return new URL(CHAT_COMPLETION_PATH, baseURL).toString();
 };
 
 /** 非流式：等 AI 全部生成完再一次返回（本项目 UI 主要用流式） */
@@ -83,7 +85,6 @@ export const createChatStream = async (
     if (done) {
       break; // 流读完了
     }
-
     buffer += decoder.decode(value, { stream: true });
     // SSE 事件之间用空行分隔
     const events = buffer.split(/\r?\n\r?\n/);
@@ -95,6 +96,7 @@ export const createChatStream = async (
         continue; // 空事件跳过
       }
 
+      // OpenAI 兼容协议：收到 [DONE] 表示流结束
       if (eventData === '[DONE]') {
         handlers.onDone(); // OpenAI 风格结束标记
         return;
@@ -106,6 +108,7 @@ export const createChatStream = async (
         handlers.onChunk(chunk); // 把本段文字交给 UI 显示
       }
 
+      // finish_reason 出现说明本轮生成已结束
       if (parsedPayload.choices?.[0]?.finish_reason) {
         handlers.onDone(); // 有 finish_reason 也表示结束
         return;
@@ -118,10 +121,15 @@ export const createChatStream = async (
   if (buffer.trim()) {
     const eventData = parseSseEventData(buffer);
     if (eventData && eventData !== '[DONE]') {
-      const parsedPayload = JSON.parse(eventData) as StreamPayload;
-      const chunk = extractChunkContent(parsedPayload);
-      if (chunk) {
-        handlers.onChunk(chunk);
+      try {
+        const parsedPayload = JSON.parse(eventData) as StreamPayload;
+        const chunk = extractChunkContent(parsedPayload);
+        if (chunk) {
+          handlers.onChunk(chunk);
+        }
+      } catch {
+        handlers.onError(CHAT_REQUEST_FAILED);
+        return;
       }
     }
   }

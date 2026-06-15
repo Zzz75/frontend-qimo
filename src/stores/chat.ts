@@ -95,7 +95,6 @@ export const useChatStore = defineStore('chat', () => {
       createdAt: Date.now()
     });
     isStreaming.value = true;
-    streamBuffer.value = '';
 
     const appStore = useAppStore();
     // 步骤 3：调用流式 API
@@ -121,8 +120,10 @@ export const useChatStore = defineStore('chat', () => {
           isStreaming.value = false;
           persistMessages();
         }
-      }
-    );
+      );
+    } catch {
+      handleSendError();
+    }
 
     isSending.value = false;
   };
@@ -136,7 +137,6 @@ export const useChatStore = defineStore('chat', () => {
     messagesBySession,
     isSending,
     isStreaming,
-    streamBuffer,
     error,
     activeMessages,
     canSend,

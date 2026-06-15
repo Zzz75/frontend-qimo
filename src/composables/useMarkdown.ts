@@ -30,9 +30,13 @@ const ensureHttpProtocol = (href: string): string => {
 // marked 全局配置只需做一次，用标志位避免重复配置
 let isConfigured = false;
 
+/**
+ * Markdown 渲染组合式函数。
+ *
+ * marked 工作流程：Markdown 字符串 → 词法/语法分析 → 调用 Renderer 各钩子生成 HTML 片段 → 拼接成完整 HTML。
+ * 本项目通过 marked.use() 覆盖 renderer，注入代码高亮并收紧链接与原始 HTML 的处理策略。
+ */
 export const useMarkdown = () => {
-  const { highlightCode } = useHighlight();
-
   if (!isConfigured) {
     const renderer = new marked.Renderer();
 

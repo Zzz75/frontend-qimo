@@ -16,14 +16,14 @@ import TypingIndicator from './TypingIndicator.vue';
 
 const chatStore = useChatStore();
 const sessionStore = useSessionStore();
-const { activeMessages, isStreaming, streamBuffer } = storeToRefs(chatStore);
+const { activeMessages, isStreaming } = storeToRefs(chatStore);
 const { activeSessionId } = storeToRefs(sessionStore);
 
 const listRef = ref<HTMLElement | null>(null);
 const { scrollToBottom } = useAutoScroll(listRef);
 
 watch(
-  [activeMessages, isStreaming, streamBuffer],
+  [activeMessages, isStreaming],
   () => {
     scrollToBottom();
   },
@@ -48,11 +48,23 @@ watch(
 
 <style scoped>
 .message-list {
+  --message-list-scrollbar-thumb: #c8ced8;
+  --message-list-scrollbar-thumb-hover: #aeb6c4;
+  --message-list-scrollbar-track: transparent;
+
   flex: 1;
   overflow: auto;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  scrollbar-color: var(--message-list-scrollbar-thumb) var(--message-list-scrollbar-track);
+  scrollbar-width: thin;
 }
+
+:global(:root[data-theme='dark']) .message-list {
+  --message-list-scrollbar-thumb: #4a4a4a;
+  --message-list-scrollbar-thumb-hover: #626262;
+}
+
 </style>
