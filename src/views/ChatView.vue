@@ -11,7 +11,6 @@ import { storeToRefs } from 'pinia';           // 把 store 里的 ref 转成 re
 // 引入本页用到的子组件
 import AppHeader from '@/components/common/AppHeader.vue';
 import ErrorToast from '@/components/common/ErrorToast.vue';
-import LoadingState from '@/components/common/LoadingState.vue';
 import ChatInput from '@/components/chat/ChatInput.vue';
 import MessageList from '@/components/chat/MessageList.vue';
 import SessionSidebar from '@/components/session/SessionSidebar.vue';
@@ -27,7 +26,7 @@ const uiStore = useUiStore();
 
 // storeToRefs：解构后仍保持响应式（直接解构会丢响应式）
 const { error } = storeToRefs(chatStore);
-const { isMobileDrawerOpen, globalLoading } = storeToRefs(uiStore);
+const { isMobileDrawerOpen } = storeToRefs(uiStore);
 
 /** 点击手机端遮罩层时关闭抽屉 */
 const handleOverlayClick = () => {
@@ -72,9 +71,7 @@ onUnmounted(() => {
 
       <!-- 右侧主聊天区 -->
       <section class="chat-main">
-        <!-- 全局 loading 时显示转圈，否则显示消息列表 -->
-        <LoadingState v-if="globalLoading" />
-        <MessageList v-else />
+        <MessageList />
 
         <!-- 有错误时显示红色提示条 -->
         <ErrorToast

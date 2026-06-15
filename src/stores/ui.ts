@@ -1,6 +1,6 @@
 /**
  * UI 界面状态 Store（Pinia 全局数据仓库）
- * 管理：主题（浅/深）、侧边栏收起、手机抽屉、全局 loading
+ * 管理：主题（浅/深）、侧边栏收起、手机抽屉
  * 其中「主题」和「侧边栏」会保存到 localStorage，刷新后保留
  */
 
@@ -32,8 +32,6 @@ export const useUiStore = defineStore('ui', () => {
   const sidebarCollapsed = ref(false);
   // 手机端左侧会话列表抽屉是否打开
   const isMobileDrawerOpen = ref(false);
-  // 是否显示全屏「加载中」（本项目中较少用到）
-  const globalLoading = ref(false);
 
   /** 把需要长期记住的设置写入 localStorage */
   const persist = () => {
@@ -77,7 +75,7 @@ export const useUiStore = defineStore('ui', () => {
 
   /** 打开手机端会话列表抽屉（AppHeader 菜单按钮会调） */
   const openMobileDrawer = () => {
-    isMobileDrawerOpen.value = true;
+    isMobileDrawerOpen.value = !isMobileDrawerOpen.value;
   };
 
   /** 关闭手机端抽屉（点遮罩、切换会话等时会调） */
@@ -85,22 +83,15 @@ export const useUiStore = defineStore('ui', () => {
     isMobileDrawerOpen.value = false;
   };
 
-  /** 设置全局 loading 显示或隐藏 */
-  const setGlobalLoading = (flag: boolean) => {
-    globalLoading.value = flag;
-  };
-
   // 把状态和方法暴露出去，供组件和其他 store 使用
   return {
     theme,              // 当前主题（响应式）
     sidebarCollapsed,   // 侧边栏是否收起
     isMobileDrawerOpen, // 手机抽屉是否打开
-    globalLoading,      // 全局 loading 状态
     toggleTheme,        // 切换主题
     toggleSidebar,      // 切换侧边栏
     openMobileDrawer,   // 打开抽屉
     closeMobileDrawer,  // 关闭抽屉
-    setGlobalLoading,   // 设置 loading
     loadFromStorage     // 从本地恢复（启动时用）
   };
 });

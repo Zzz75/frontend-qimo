@@ -37,6 +37,8 @@ let isConfigured = false;
  * 本项目通过 marked.use() 覆盖 renderer，注入代码高亮并收紧链接与原始 HTML 的处理策略。
  */
 export const useMarkdown = () => {
+  const { highlightCode } = useHighlight();
+
   if (!isConfigured) {
     const renderer = new marked.Renderer();
 

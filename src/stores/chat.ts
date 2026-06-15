@@ -71,20 +71,28 @@ export const useChatStore = defineStore('chat', () => {
    */
   const sendMessage = async (content: string) => {
     const sessionId = sessionStore.activeSessionId!;
+    const trimmedContent = content.trim();
     isSending.value = true;
     error.value = null;
 
     const messages = getSessionMessages(sessionId);
+    const previousMessages = [...messages];
+
+    const rollbackCurrentSend = (message: string) => {
+      messagesBySession.value[sessionId] = previousMessages;
+      error.value = message;
+      isStreaming.value = false;
+      streamBuffer.value = '';
+      persistMessages();
+    };
 
     // 步骤 1：追加用户消息
     messages.push({
       id: createId(),
       role: 'user',
-      content: content.trim(),
+      content: trimmedContent,
       createdAt: Date.now()
     });
-    // 用首条消息内容自动给会话起名
-    sessionStore.touchSession(sessionId, messages[messages.length - 1].content);
 
     // 步骤 2：先插一条空的 assistant 消息，后面流式往里填 content
     const assistantIndex = messages.length;
@@ -97,35 +105,36 @@ export const useChatStore = defineStore('chat', () => {
     isStreaming.value = true;
 
     const appStore = useAppStore();
-    // 步骤 3：调用流式 API
-    await createChatStream(
-      {
-        model: appStore.modelName,
-        messages: toRequestMessages(messages),
-        stream: true
-      },
-      {
-        onChunk: (chunk) => {
-          // 必须改 messages 数组里的对象，界面才会跟着更新
-          messages[assistantIndex].content += chunk;
-          streamBuffer.value = messages[assistantIndex].content;
+    try {
+      // 步骤 3：调用流式 API
+      await createChatStream(
+        {
+          model: appStore.modelName,
+          messages: toRequestMessages(messages),
+          stream: true
         },
-        onDone: () => {
-          isStreaming.value = false;
-          sessionStore.touchSession(sessionId);
-          persistMessages();
-        },
-        onError: (message) => {
-          error.value = message;
-          isStreaming.value = false;
-          persistMessages();
+        {
+          onChunk: (chunk) => {
+            // 必须改 messages 数组里的对象，界面才会跟着更新
+            messages[assistantIndex].content += chunk;
+            streamBuffer.value = messages[assistantIndex].content;
+          },
+          onDone: () => {
+            isStreaming.value = false;
+            // 请求成功后再更新会话，失败回滚时不污染标题和最近时间
+            sessionStore.touchSession(sessionId, trimmedContent);
+            persistMessages();
+          },
+          onError: (message) => {
+            rollbackCurrentSend(message);
+          }
         }
       );
     } catch {
-      handleSendError();
+      rollbackCurrentSend('消息发送失败，请稍后重试');
+    } finally {
+      isSending.value = false;
     }
-
-    isSending.value = false;
   };
 
   /** 关闭错误提示条 */

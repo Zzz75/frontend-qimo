@@ -29,6 +29,20 @@ interface StreamPayload {
   error?: { message?: string; code?: string };
 }
 
+interface ErrorResponsePayload extends StreamPayload {
+  message?: string;
+}
+
+/** 从非 2xx 响应里尽量提取后端返回的错误信息 */
+const readErrorMessage = async (response: Response): Promise<string> => {
+  try {
+    const payload = await response.json() as ErrorResponsePayload;
+    return payload.error?.message ?? payload.message ?? CHAT_REQUEST_FAILED;
+  } catch {
+    return CHAT_REQUEST_FAILED;
+  }
+};
+
 /** 从流式 JSON 里取出文本内容 */
 const extractChunkContent = (payload: StreamPayload): string =>
   payload.choices?.[0]?.delta?.content ?? '';
@@ -75,6 +89,16 @@ export const createChatStream = async (
     body: JSON.stringify({ ...payload, stream: true }) // 强制开启 stream
   });
 
+  if (!response.ok) {
+    handlers.onError(await readErrorMessage(response));
+    return;
+  }
+
+  if (!response.body) {
+    handlers.onError(CHAT_REQUEST_FAILED);
+    return;
+  }
+
   const reader = response.body!.getReader(); // 流读取器，像读水管里的水
   const decoder = new TextDecoder('utf-8');    // 二进制转 UTF-8 字符串
   let buffer = '';                           // 未处理完的半截数据
@@ -103,6 +127,11 @@ export const createChatStream = async (
       }
 
       const parsedPayload = JSON.parse(eventData) as StreamPayload;
+      if (parsedPayload.error?.message) {
+        handlers.onError(parsedPayload.error.message);
+        return;
+      }
+
       const chunk = extractChunkContent(parsedPayload);
       if (chunk) {
         handlers.onChunk(chunk); // 把本段文字交给 UI 显示
@@ -123,6 +152,11 @@ export const createChatStream = async (
     if (eventData && eventData !== '[DONE]') {
       try {
         const parsedPayload = JSON.parse(eventData) as StreamPayload;
+        if (parsedPayload.error?.message) {
+          handlers.onError(parsedPayload.error.message);
+          return;
+        }
+
         const chunk = extractChunkContent(parsedPayload);
         if (chunk) {
           handlers.onChunk(chunk);
