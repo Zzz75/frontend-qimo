@@ -16,7 +16,7 @@ const goHome = () => {
 <template>
   <main class="not-found">
     <h1>404</h1>
-    <p>页面不存在</p>
+    <p>页面不存在呀</p>
     <button type="button" @click="goHome">返回首页</button>
   </main>
 </template>
